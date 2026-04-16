@@ -1,93 +1,77 @@
+# Cấu hình finetune QLoRA tối giản cho Qwen3.
 model:
-  base_model: "Qwen/Qwen3-0.6B"
+  base_model: Qwen/Qwen3-0.6B
   trust_remote_code: true
-
-  # QLoRA 4-bit
   load_in_4bit: true
-  bnb_4bit_quant_type: "nf4"
-  bnb_4bit_compute_dtype: "float16"
-  bnb_4bit_use_double_quant: true
-
-  # An toàn trên Kaggle
-  device_map: "auto"
-  attn_implementation: "eager"
-
-lora:
-  r: 16
-  lora_alpha: 32
-  lora_dropout: 0.05
-  bias: "none"
-  task_type: "CAUSAL_LM"
-
-  # Bản an toàn, đủ tốt cho correction
-  target_modules:
-    - "q_proj"
-    - "k_proj"
-    - "v_proj"
-    - "o_proj"
-    - "gate_proj"
-    - "up_proj"
-    - "down_proj"
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_compute_dtype: float16
+  device_map: auto
 
 data:
-  seed: 42
-
   train_sources:
-    - type: "hf"
-      path: "coung21/vi-spelling-correction"
-      split: "train"
-
+    - type: huggingface
+      name: coung21/vi-spelling-correction
+      split: train[:90%]
+      domain: generic
+      source_type: synthetic
+    - type: huggingface
+      name: coung21/vi-spelling-correction
+      split: test[:10%]
+      domain: generic
+      source_type: synthetic
   eval_sources:
-    - type: "hf"
-      path: "coung21/vi-spelling-correction"
-      split: "test"
-
-  max_train_samples: 200000
-  max_eval_samples: 2000
+    - type: huggingface
+      name: coung21/vi-spelling-correction
+      split: test[:2%]
+      domain: generic
+      source_type: synthetic
+  max_train_samples: null
+  max_eval_samples: 1000
+  seed: 42
 
 prompt:
   system_prompt: |
-    Bạn là bộ sửa lỗi chính tả/ngữ pháp tiếng Việt.
-    Chỉ trả về văn bản đã sửa.
+    Bạn là bộ sửa lỗi chính tả tiếng Việt.
+    Chỉ trả về câu đã sửa.
     Giữ nguyên ý nghĩa.
-    Nếu đầu vào đã đúng, trả về nguyên văn.
+    Nếu câu đã đúng thì trả về nguyên văn.
     Không giải thích.
 
 train:
-  output_dir: "outputs/qwen3_0_6b_t4_stage1"
-  seed: 42
-
+  output_dir: outputs/qwen3-0.6b-spell-lora
+  max_length: 192
   per_device_train_batch_size: 4
   per_device_eval_batch_size: 4
-  gradient_accumulation_steps: 8
-
-  num_train_epochs: 1
-  learning_rate: 0.0001
-  weight_decay: 0.01
-
-  max_length: 192
-
-  logging_steps: 20
-  save_steps: 500
-  eval_steps: 500
-
-  evaluation_strategy: "steps"
-  save_strategy: "steps"
-  save_total_limit: 2
-  load_best_model_at_end: false
-
-  fp16: true
-  bf16: false
-  gradient_checkpointing: true
-
+  gradient_accumulation_steps: 16
+  num_train_epochs: 2
+  learning_rate: 1.0e-4
   warmup_steps: 100
-  lr_scheduler_type: "cosine"
+  weight_decay: 0.01
+  logging_steps: 10
+  eval_steps: 200
+  save_steps: 200
+  save_total_limit: 2
+  lr_scheduler_type: cosine
+  gradient_checkpointing: true
+  bf16: false
+  fp16: true
+  seed: 42
 
-  max_grad_norm: 1.0
-  group_by_length: false
+lora:
+  r: 8
+  alpha: 16
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_proj
+    - up_proj
+    - down_proj
 
 wandb:
   enabled: true
-  project: "qwen3-spelling-error-correction"
+  project: qwen3-spelling-error-correction
   entity: null
-  run_name: "qwen3-0.6b-t4-stage1"
+  run_name: qwen3-0.6b-coung21-stage1
