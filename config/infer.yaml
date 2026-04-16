@@ -1,0 +1,33 @@
+# Cấu hình suy luận tối giản.
+model:
+  base_model: Qwen/Qwen3-0.6B
+  adapter_path: outputs/qwen3-0.6b-spell-lora
+  trust_remote_code: true
+  load_in_4bit: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_compute_dtype: float16
+  device_map: auto
+
+prompt:
+  system_prompt: |
+    Bạn là bộ sửa lỗi chính tả tiếng Việt.
+    Chỉ trả về câu đã sửa.
+    Giữ nguyên ý nghĩa.
+    Nếu câu đã đúng thì trả về nguyên văn.
+    Không giải thích.
+
+generation:
+  max_new_tokens: 96
+  do_sample: false
+  temperature: 0.0
+  top_p: 1.0
+
+io:
+  input_file: null
+  output_file: outputs/infer_predictions.jsonl
+
+wandb:
+  enabled: false
+  project: qwen3-spelling-error-correction
+  entity: null
+  run_name: qwen3-0.6b-infer

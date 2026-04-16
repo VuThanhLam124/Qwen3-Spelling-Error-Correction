@@ -1,0 +1,41 @@
+# Cấu hình đánh giá tối giản.
+model:
+  base_model: Qwen/Qwen3-0.6B
+  adapter_path: outputs/qwen3-0.6b-spell-lora
+  trust_remote_code: true
+  load_in_4bit: true
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_compute_dtype: float16
+  device_map: auto
+
+prompt:
+  system_prompt: |
+    Bạn là bộ sửa lỗi chính tả tiếng Việt.
+    Chỉ trả về câu đã sửa.
+    Giữ nguyên ý nghĩa.
+    Nếu câu đã đúng thì trả về nguyên văn.
+    Không giải thích.
+
+eval:
+  sources:
+    - type: huggingface
+      name: nguyenthanhasia/vsec-vietnamese-spell-correction
+      split: train
+      domain: generic
+      source_type: human
+  max_eval_samples: null
+  batch_size: 1
+  save_predictions_path: outputs/eval_predictions.jsonl
+  save_metrics_path: outputs/eval_metrics.json
+
+generation:
+  max_new_tokens: 96
+  do_sample: false
+  temperature: 0.0
+  top_p: 1.0
+
+wandb:
+  enabled: true
+  project: qwen3-spelling-error-correction
+  entity: null
+  run_name: qwen3-0.6b-coung21-stage1

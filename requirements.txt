@@ -1,0 +1,10 @@
+# Mục đích file: khai báo thư viện tối thiểu để train/infer/eval.
+
+accelerate>=0.30.0
+bitsandbytes>=0.43.0
+datasets>=2.19.0
+peft>=0.11.0
+PyYAML>=6.0
+torch>=2.2.0
+transformers>=4.51.0
+wandb>=0.17.0
