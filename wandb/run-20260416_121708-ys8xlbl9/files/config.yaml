@@ -1,0 +1,122 @@
+_wandb:
+    value:
+        cli_version: 0.26.0
+        e:
+            07ejryrlp9cf7jfcbuyy3tzb6fq5w02z:
+                args:
+                    - --config
+                    - config/finetune.yaml
+                email: vuthanhlam848@gmail.com
+                executable: /conda/miniconda3/envs/correct/bin/python
+                git:
+                    commit: dcf4477577bd4feea459a9b2942f128866c4c888
+                    remote: https://github.com/VuThanhLam124/Qwen3-Spelling-Error-Correction.git
+                host: pytorch-MS-7C52
+                os: Linux-6.8.0-107-generic-x86_64-with-glibc2.35
+                program: -m src.finetune
+                python: CPython 3.12.0
+                root: /data/VNPost/Qwen3-Spelling-Error-Correction
+                startedAt: "2026-04-16T05:17:08.480728Z"
+                writerId: 07ejryrlp9cf7jfcbuyy3tzb6fq5w02z
+        m: []
+        python_version: 3.12.0
+        t:
+            "1":
+                - 1
+                - 11
+                - 49
+                - 51
+                - 71
+                - 98
+            "2":
+                - 1
+                - 11
+                - 49
+                - 51
+                - 71
+                - 98
+            "3":
+                - 13
+                - 16
+            "4": 3.12.0
+            "5": 0.26.0
+            "6": 5.5.4
+            "12": 0.26.0
+            "13": linux-x86_64
+data:
+    value:
+        eval_sources:
+            - domain: generic
+              name: coung21/vi-spelling-correction
+              source_type: synthetic
+              split: test[:2%]
+              type: huggingface
+        max_eval_samples: 1000
+        max_train_samples: null
+        seed: 42
+        train_sources:
+            - domain: generic
+              name: coung21/vi-spelling-correction
+              source_type: synthetic
+              split: train[:90%]
+              type: huggingface
+            - domain: generic
+              name: coung21/vi-spelling-correction
+              source_type: synthetic
+              split: test[:10%]
+              type: huggingface
+lora:
+    value:
+        alpha: 16
+        dropout: 0.05
+        r: 8
+        target_modules:
+            - q_proj
+            - k_proj
+            - v_proj
+            - o_proj
+            - gate_proj
+            - up_proj
+            - down_proj
+model:
+    value:
+        base_model: Qwen/Qwen3-0.6B
+        bnb_4bit_compute_dtype: float16
+        bnb_4bit_quant_type: nf4
+        device_map: auto
+        load_in_4bit: true
+        trust_remote_code: true
+prompt:
+    value:
+        system_prompt: |
+            Bạn là bộ sửa lỗi chính tả tiếng Việt.
+            Chỉ trả về câu đã sửa.
+            Giữ nguyên ý nghĩa.
+            Nếu câu đã đúng thì trả về nguyên văn.
+            Không giải thích.
+train:
+    value:
+        bf16: false
+        eval_steps: 200
+        fp16: true
+        gradient_accumulation_steps: 16
+        gradient_checkpointing: true
+        learning_rate: 0.0001
+        logging_steps: 10
+        lr_scheduler_type: cosine
+        max_length: 192
+        num_train_epochs: 2
+        output_dir: outputs/qwen3-0.6b-spell-lora
+        per_device_eval_batch_size: 1
+        per_device_train_batch_size: 1
+        save_steps: 200
+        save_total_limit: 2
+        seed: 42
+        warmup_ratio: 0.03
+        weight_decay: 0.01
+wandb:
+    value:
+        enabled: true
+        entity: null
+        project: qwen3-spelling-error-correction
+        run_name: qwen3-0.6b-coung21-stage1

@@ -45,7 +45,7 @@ train:
   gradient_accumulation_steps: 16
   num_train_epochs: 2
   learning_rate: 1.0e-4
-  warmup_ratio: 0.03
+  warmup_steps: 100
   weight_decay: 0.01
   logging_steps: 10
   eval_steps: 200

@@ -159,38 +159,39 @@ def main(config_path: str) -> None:
     train_cfg = cfg["train"]
     report_to = setup_wandb(cfg, train_cfg)
 
-    args = TrainingArguments(
+    training_args = TrainingArguments(
         output_dir=train_cfg["output_dir"],
         per_device_train_batch_size=train_cfg.get("per_device_train_batch_size", 1),
         per_device_eval_batch_size=train_cfg.get("per_device_eval_batch_size", 1),
-        gradient_accumulation_steps=train_cfg.get("gradient_accumulation_steps", 16),
-        learning_rate=train_cfg.get("learning_rate", 1e-4),
-        num_train_epochs=train_cfg.get("num_train_epochs", 2),
-        weight_decay=train_cfg.get("weight_decay", 0.01),
-        warmup_ratio=train_cfg.get("warmup_ratio", 0.03),
+        gradient_accumulation_steps=train_cfg.get("gradient_accumulation_steps", 1),
+        num_train_epochs=train_cfg.get("num_train_epochs", 1),
+        learning_rate=float(train_cfg.get("learning_rate", 2e-4)),
         logging_steps=train_cfg.get("logging_steps", 10),
-        eval_steps=train_cfg.get("eval_steps", 200),
-        save_steps=train_cfg.get("save_steps", 200),
-        save_total_limit=train_cfg.get("save_total_limit", 2),
-        lr_scheduler_type=train_cfg.get("lr_scheduler_type", "cosine"),
+        save_steps=train_cfg.get("save_steps", 100),
+        eval_steps=train_cfg.get("eval_steps", 100),
+        eval_strategy=train_cfg.get("evaluation_strategy", "steps"),
+        save_strategy=train_cfg.get("save_strategy", "steps"),
+        report_to=report_to,
         fp16=train_cfg.get("fp16", True),
         bf16=train_cfg.get("bf16", False),
-        report_to=report_to,
-        run_name=cfg.get("wandb", {}).get("run_name") or os.path.basename(train_cfg["output_dir"]),
+        gradient_checkpointing=train_cfg.get("gradient_checkpointing", True),
+        warmup_steps=train_cfg.get("warmup_steps", 0),
+        save_total_limit=train_cfg.get("save_total_limit", 2),
+        load_best_model_at_end=train_cfg.get("load_best_model_at_end", False),
         remove_unused_columns=False,
-        evaluation_strategy="steps" if eval_ds is not None else "no",
-        save_strategy="steps",
-        load_best_model_at_end=False,
-        seed=train_cfg.get("seed", 42),
     )
+
+    data_collator = CausalLMCollator(tokenizer)
+    
+    print("train samples:", len(train_ds))
+    print("eval samples:", 0 if eval_ds is None else len(eval_ds))
 
     trainer = Trainer(
         model=model,
-        args=args,
+        args=training_args,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
-        data_collator=CausalLMCollator(tokenizer),
-        tokenizer=tokenizer,
+        data_collator=data_collator,
     )
 
     trainer.train()
