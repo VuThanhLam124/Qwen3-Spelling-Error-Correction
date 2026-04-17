@@ -15,6 +15,7 @@ import numpy as np
 import torch
 from datasets import Dataset
 from transformers import Trainer, TrainingArguments
+from transformers.trainer_utils import get_last_checkpoint
 
 try:
     import wandb
@@ -194,7 +195,11 @@ def main(config_path: str) -> None:
         data_collator=data_collator,
     )
 
-    trainer.train()
+    # Tự động resume từ checkpoint cuối nếu session bị ngắt giữa chừng.
+    last_checkpoint = get_last_checkpoint(train_cfg["output_dir"]) if os.path.isdir(train_cfg["output_dir"]) else None
+    if last_checkpoint:
+        print(f"[Resume] Phát hiện checkpoint: {last_checkpoint}. Tiếp tục train thay vì chạy lại từ đầu.")
+    trainer.train(resume_from_checkpoint=last_checkpoint)
     trainer.save_model(train_cfg["output_dir"])
     tokenizer.save_pretrained(train_cfg["output_dir"])
 

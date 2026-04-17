@@ -16,7 +16,7 @@ data:
   eval_sources:
     - type: huggingface
       name: coung21/vi-spelling-correction
-      split: test[:10%]
+      split: test[:5%]
       domain: generic
       source_type: synthetic
 

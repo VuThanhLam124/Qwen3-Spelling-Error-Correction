@@ -78,13 +78,18 @@ def run_file(cfg: Dict[str, Any], input_file: str, output_file: str) -> None:
     print(f"Đã lưu dự đoán: {output_file}")
 
 
-def main(config_path: str, text: str | None = None) -> None:
+def main(config_path: str, text: str | None = None, adapter_path: str | None = None) -> None:
     """
-    - arg/input: đường dẫn config và text tùy chọn.
+    - arg/input: đường dẫn config, text tùy chọn, và adapter_path override tùy chọn.
     - output: không có.
     - mục đích của hàm: chọn mode suy luận một câu hoặc cả file.
     """
     cfg = load_yaml(config_path)
+
+    # Override adapter_path nếu truyền qua CLI (vd: test tại checkpoint cụ thể).
+    if adapter_path is not None:
+        cfg["model"]["adapter_path"] = adapter_path
+
     if text:
         run_single_text(cfg, text)
         return
@@ -100,5 +105,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="config/infer.yaml")
     parser.add_argument("--text", type=str, default=None)
+    parser.add_argument(
+        "--adapter-path",
+        type=str,
+        default=None,
+        dest="adapter_path",
+        help="Override adapter_path trong config (vd: outputs/.../checkpoint-6000).",
+    )
     args = parser.parse_args()
-    main(args.config, args.text)
+    main(args.config, args.text, args.adapter_path)
