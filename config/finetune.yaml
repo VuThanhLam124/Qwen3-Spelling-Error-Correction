@@ -59,7 +59,7 @@ train:
 
 lora:
   r: 16
-  alpha: 64
+  alpha: 32
   dropout: 0.05
   target_modules:
     - q_proj

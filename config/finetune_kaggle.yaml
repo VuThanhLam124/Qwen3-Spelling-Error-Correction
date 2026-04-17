@@ -34,11 +34,11 @@ prompt:
 
 train:
   output_dir: outputs/qwen3-0.6b-spell-lora
-  max_length: 128
+  max_length: 512
   per_device_train_batch_size: 16
   per_device_eval_batch_size: 16
   gradient_accumulation_steps: 32
-  num_train_epochs: 1
+  num_train_epochs: 3
   learning_rate: 1.0e-4
   warmup_steps: 50
   weight_decay: 0.01
@@ -53,8 +53,8 @@ train:
   seed: 42
 
 lora:
-  r: 8
-  lora_alpha: 16
+  r: 16
+  lora_alpha: 32
   lora_dropout: 0.05
   target_modules:
     - q_proj
