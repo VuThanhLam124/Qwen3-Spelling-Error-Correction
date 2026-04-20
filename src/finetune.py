@@ -195,11 +195,18 @@ def main(config_path: str) -> None:
         data_collator=data_collator,
     )
 
-    # Tự động resume từ checkpoint cuối nếu session bị ngắt giữa chừng.
-    last_checkpoint = get_last_checkpoint(train_cfg["output_dir"]) if os.path.isdir(train_cfg["output_dir"]) else None
-    if last_checkpoint:
-        print(f"[Resume] Phát hiện checkpoint: {last_checkpoint}. Tiếp tục train thay vì chạy lại từ đầu.")
-    trainer.train(resume_from_checkpoint=last_checkpoint)
+    # Ưu tiên checkpoint chỉ định trong config; nếu không có thì tự tìm checkpoint cuối trong output_dir.
+    resume_checkpoint = train_cfg.get("resume_from_checkpoint")
+    if resume_checkpoint:
+        if not os.path.isdir(resume_checkpoint):
+            raise FileNotFoundError(f"Không tìm thấy checkpoint để resume: {resume_checkpoint}")
+        print(f"[Resume] Dùng checkpoint chỉ định trong config: {resume_checkpoint}")
+    else:
+        resume_checkpoint = get_last_checkpoint(train_cfg["output_dir"]) if os.path.isdir(train_cfg["output_dir"]) else None
+        if resume_checkpoint:
+            print(f"[Resume] Phát hiện checkpoint cuối trong output_dir: {resume_checkpoint}")
+
+    trainer.train(resume_from_checkpoint=resume_checkpoint)
     trainer.save_model(train_cfg["output_dir"])
     tokenizer.save_pretrained(train_cfg["output_dir"])
 

@@ -59,6 +59,16 @@ Sau đó chỉnh `wandb.enabled: true` trong `config/finetune.yaml` hoặc `conf
 python -m src.finetune --config config/finetune.yaml
 ```
 
+Muốn resume từ một checkpoint cụ thể, đặt trong YAML:
+
+```yaml
+train:
+  output_dir: outputs/qwen3-0.6b-spell-lora
+  resume_from_checkpoint: outputs/qwen3-0.6b-spell-lora/checkpoint-1200
+```
+
+Nếu `resume_from_checkpoint: null`, code sẽ tự tìm `checkpoint-*` mới nhất trong `train.output_dir`.
+
 ## Infer một câu
 
 ```bash
