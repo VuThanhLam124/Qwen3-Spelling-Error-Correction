@@ -83,7 +83,7 @@ datasets/
 raw_data/
 processed_data/
 *.csv
-*.json
+# *.json
 *.parquet
 
 # WandB
