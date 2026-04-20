@@ -66,11 +66,11 @@ coverage.xml
 
 # ML & Training Related
 # Large model files
-*.pt
-*.pth
-*.bin
-*.ckpt
-*.safetensors
+# *.pt
+# *.pth
+# *.bin
+# *.ckpt
+# *.safetensors
 !requirements.txt
 
 # Training outputs and checkpoints
