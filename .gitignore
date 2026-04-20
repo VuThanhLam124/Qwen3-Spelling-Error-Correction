@@ -113,3 +113,4 @@ Thumbs.db
 .dmypy.json
 dmypy.json
 .pyre/
+.codex
