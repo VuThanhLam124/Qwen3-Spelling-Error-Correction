@@ -4,10 +4,13 @@ Mục đích file: nạp tokenizer, model và adapter LoRA cho Qwen3.
 
 from __future__ import annotations
 
+import json
+import os
+import re
 from typing import Any, Dict, Optional
 
 import torch
-from peft import LoraConfig, PeftConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
+from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 
@@ -93,6 +96,69 @@ def attach_lora(model, lora_cfg: Dict[str, Any]):
     return model
 
 
+def _load_lora_cfg_from_checkpoint_dir(resume_checkpoint: str) -> Dict[str, Any]:
+    """
+    - arg/input: đường dẫn local tới thư mục checkpoint.
+    - output: config LoRA đọc được từ checkpoint.
+    - mục đích của hàm: lấy shape/config adapter từ file local, không phụ thuộc HF Hub.
+    """
+    checkpoint_dir = os.path.abspath(os.path.expanduser(resume_checkpoint))
+    adapter_config_path = os.path.join(checkpoint_dir, "adapter_config.json")
+    adapter_weights_path = os.path.join(checkpoint_dir, "adapter_model.safetensors")
+
+    if os.path.isfile(adapter_config_path):
+        with open(adapter_config_path, "r", encoding="utf-8") as f:
+            raw_cfg = json.load(f)
+
+        peft_type = str(raw_cfg.get("peft_type", "")).upper()
+        if peft_type and peft_type != "LORA":
+            raise ValueError(f"Checkpoint {resume_checkpoint} không phải LoRA adapter.")
+
+        target_modules = raw_cfg.get("target_modules")
+        if isinstance(target_modules, str):
+            target_modules = [target_modules]
+
+        return {
+            "r": raw_cfg.get("r"),
+            "alpha": raw_cfg.get("lora_alpha"),
+            "dropout": raw_cfg.get("lora_dropout"),
+            "target_modules": target_modules,
+            "bias": raw_cfg.get("bias", "none"),
+        }
+
+    if os.path.isfile(adapter_weights_path):
+        from safetensors.torch import load_file
+
+        state_dict = load_file(adapter_weights_path)
+        lora_a_keys = [key for key in state_dict.keys() if ".lora_A." in key]
+        if not lora_a_keys:
+            raise ValueError(f"Không suy ra được rank LoRA từ checkpoint: {resume_checkpoint}")
+
+        rank = int(state_dict[lora_a_keys[0]].shape[0])
+        target_modules = sorted(
+            {
+                match.group(1)
+                for key in state_dict.keys()
+                for match in [re.search(r"\.([^.]+)\.lora_[AB](?:\.[^.]+)?\.weight$", key)]
+                if match is not None
+            }
+        )
+
+        print(
+            "[Resume] Không thấy adapter_config.json; suy ra cấu hình LoRA từ adapter_model.safetensors. "
+            "Hãy giữ alpha/dropout trong YAML giống checkpoint gốc."
+        )
+        return {
+            "r": rank,
+            "target_modules": target_modules,
+            "bias": "none",
+        }
+
+    raise FileNotFoundError(
+        f"Checkpoint {resume_checkpoint} không có adapter_config.json hoặc adapter_model.safetensors."
+    )
+
+
 def resolve_lora_cfg_for_resume(lora_cfg: Dict[str, Any], resume_checkpoint: str | None) -> Dict[str, Any]:
     """
     - arg/input: config LoRA từ yaml và đường dẫn checkpoint resume.
@@ -103,20 +169,12 @@ def resolve_lora_cfg_for_resume(lora_cfg: Dict[str, Any], resume_checkpoint: str
     if not resume_checkpoint:
         return effective_cfg
 
-    peft_cfg = PeftConfig.from_pretrained(resume_checkpoint)
-    if str(peft_cfg.peft_type).upper() != "PeftType.LORA" and str(peft_cfg.peft_type).upper() != "LORA":
-        raise ValueError(f"Checkpoint {resume_checkpoint} không phải LoRA adapter.")
-
-    checkpoint_cfg = {
-        "r": peft_cfg.r,
-        "alpha": peft_cfg.lora_alpha,
-        "dropout": peft_cfg.lora_dropout,
-        "target_modules": list(peft_cfg.target_modules) if peft_cfg.target_modules is not None else None,
-        "bias": peft_cfg.bias,
-    }
+    checkpoint_cfg = _load_lora_cfg_from_checkpoint_dir(resume_checkpoint)
 
     mismatched_keys = []
     for key, checkpoint_value in checkpoint_cfg.items():
+        if checkpoint_value is None:
+            continue
         yaml_value = effective_cfg.get(key)
         if yaml_value is not None and yaml_value != checkpoint_value:
             mismatched_keys.append((key, yaml_value, checkpoint_value))
