@@ -34,8 +34,7 @@ prompt:
 
 train:
   output_dir: outputs/qwen3-0.6b-spell-lora
-  resume_from_checkpoint: /kaggle/input/notebooks/thanhlamdev/qwen3-spelling-error-correction-v2/Qwen3-Spelling-Error-Correction/outputs/qwen3-0.6b-spell-lora/checkpoint-1000/
-  max_length: 512
+  resume_from_checkpoint: /kaggle/working/Qwen3-Spelling-Error-Correction/model/check_point_1000/
   per_device_train_batch_size: 16
   per_device_eval_batch_size: 16
   gradient_accumulation_steps: 32
