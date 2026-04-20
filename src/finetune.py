@@ -23,7 +23,7 @@ except Exception:
     wandb = None
 
 from src.data_ingest import load_sources, load_yaml, sample_rows
-from src.model import attach_lora, load_base_model, load_tokenizer
+from src.model import attach_lora, load_base_model, load_tokenizer, resolve_lora_cfg_for_resume
 from src.pipeline import tokenize_sft_example
 
 
@@ -108,6 +108,25 @@ def build_hf_dataset(rows: List[Dict[str, Any]]) -> Dataset:
     return Dataset.from_list(rows)
 
 
+def resolve_resume_checkpoint(train_cfg: Dict[str, Any]) -> str | None:
+    """
+    - arg/input: config train.
+    - output: đường dẫn checkpoint cần resume hoặc None.
+    - mục đích của hàm: ưu tiên checkpoint chỉ định trong yaml, nếu không có thì tự tìm checkpoint cuối.
+    """
+    resume_checkpoint = train_cfg.get("resume_from_checkpoint")
+    if resume_checkpoint:
+        if not os.path.isdir(resume_checkpoint):
+            raise FileNotFoundError(f"Không tìm thấy checkpoint để resume: {resume_checkpoint}")
+        print(f"[Resume] Dùng checkpoint chỉ định trong config: {resume_checkpoint}")
+        return resume_checkpoint
+
+    last_checkpoint = get_last_checkpoint(train_cfg["output_dir"]) if os.path.isdir(train_cfg["output_dir"]) else None
+    if last_checkpoint:
+        print(f"[Resume] Phát hiện checkpoint cuối trong output_dir: {last_checkpoint}")
+    return last_checkpoint
+
+
 def main(config_path: str) -> None:
     """
     - arg/input: đường dẫn config finetune.
@@ -115,6 +134,10 @@ def main(config_path: str) -> None:
     - mục đích của hàm: chạy toàn bộ pipeline finetune.
     """
     cfg = load_yaml(config_path)
+    train_cfg = cfg["train"]
+    resume_checkpoint = resolve_resume_checkpoint(train_cfg)
+    lora_cfg = resolve_lora_cfg_for_resume(cfg["lora"], resume_checkpoint)
+
     seed = cfg["train"].get("seed", cfg["data"].get("seed", 42))
     set_seed(seed)
 
@@ -149,7 +172,7 @@ def main(config_path: str) -> None:
         )
 
     model = load_base_model(cfg["model"], training=True)
-    model = attach_lora(model, cfg["lora"])
+    model = attach_lora(model, lora_cfg)
     if hasattr(model, "print_trainable_parameters"):
         model.print_trainable_parameters()
 
@@ -157,7 +180,6 @@ def main(config_path: str) -> None:
         model.gradient_checkpointing_enable()
         model.config.use_cache = False
 
-    train_cfg = cfg["train"]
     report_to = setup_wandb(cfg, train_cfg)
 
     training_args = TrainingArguments(
@@ -194,17 +216,6 @@ def main(config_path: str) -> None:
         eval_dataset=eval_ds,
         data_collator=data_collator,
     )
-
-    # Ưu tiên checkpoint chỉ định trong config; nếu không có thì tự tìm checkpoint cuối trong output_dir.
-    resume_checkpoint = train_cfg.get("resume_from_checkpoint")
-    if resume_checkpoint:
-        if not os.path.isdir(resume_checkpoint):
-            raise FileNotFoundError(f"Không tìm thấy checkpoint để resume: {resume_checkpoint}")
-        print(f"[Resume] Dùng checkpoint chỉ định trong config: {resume_checkpoint}")
-    else:
-        resume_checkpoint = get_last_checkpoint(train_cfg["output_dir"]) if os.path.isdir(train_cfg["output_dir"]) else None
-        if resume_checkpoint:
-            print(f"[Resume] Phát hiện checkpoint cuối trong output_dir: {resume_checkpoint}")
 
     trainer.train(resume_from_checkpoint=resume_checkpoint)
     trainer.save_model(train_cfg["output_dir"])

@@ -69,6 +69,8 @@ train:
 
 Nếu `resume_from_checkpoint: null`, code sẽ tự tìm `checkpoint-*` mới nhất trong `train.output_dir`.
 
+Khi resume, cấu hình LoRA thực tế sẽ được đọc từ checkpoint để khớp shape adapter cũ. Vì vậy nếu YAML hiện tại khác `r`, `alpha`, `dropout` hoặc `target_modules`, code sẽ tự ghi đè các giá trị này theo checkpoint.
+
 ## Infer một câu
 
 ```bash

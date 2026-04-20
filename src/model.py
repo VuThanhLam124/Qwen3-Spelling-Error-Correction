@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any, Dict, Optional
 
 import torch
-from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
+from peft import LoraConfig, PeftConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 
@@ -85,12 +85,49 @@ def attach_lora(model, lora_cfg: Dict[str, Any]):
         r=lora_cfg.get("r", 8),
         lora_alpha=lora_cfg.get("alpha", 16),
         lora_dropout=lora_cfg.get("dropout", 0.05),
-        bias="none",
+        bias=lora_cfg.get("bias", "none"),
         task_type="CAUSAL_LM",
         target_modules=lora_cfg.get("target_modules"),
     )
     model = get_peft_model(model, peft_cfg)
     return model
+
+
+def resolve_lora_cfg_for_resume(lora_cfg: Dict[str, Any], resume_checkpoint: str | None) -> Dict[str, Any]:
+    """
+    - arg/input: config LoRA từ yaml và đường dẫn checkpoint resume.
+    - output: config LoRA hiệu lực để dựng model trước khi resume.
+    - mục đích của hàm: đồng bộ shape LoRA với checkpoint cũ để tránh lỗi state_dict mismatch.
+    """
+    effective_cfg = dict(lora_cfg)
+    if not resume_checkpoint:
+        return effective_cfg
+
+    peft_cfg = PeftConfig.from_pretrained(resume_checkpoint)
+    if str(peft_cfg.peft_type).upper() != "PeftType.LORA" and str(peft_cfg.peft_type).upper() != "LORA":
+        raise ValueError(f"Checkpoint {resume_checkpoint} không phải LoRA adapter.")
+
+    checkpoint_cfg = {
+        "r": peft_cfg.r,
+        "alpha": peft_cfg.lora_alpha,
+        "dropout": peft_cfg.lora_dropout,
+        "target_modules": list(peft_cfg.target_modules) if peft_cfg.target_modules is not None else None,
+        "bias": peft_cfg.bias,
+    }
+
+    mismatched_keys = []
+    for key, checkpoint_value in checkpoint_cfg.items():
+        yaml_value = effective_cfg.get(key)
+        if yaml_value is not None and yaml_value != checkpoint_value:
+            mismatched_keys.append((key, yaml_value, checkpoint_value))
+        effective_cfg[key] = checkpoint_value
+
+    if mismatched_keys:
+        print("[Resume] Ghi đè cấu hình LoRA từ checkpoint để khớp shape:")
+        for key, yaml_value, checkpoint_value in mismatched_keys:
+            print(f"  - {key}: yaml={yaml_value} -> checkpoint={checkpoint_value}")
+
+    return effective_cfg
 
 
 def load_model_for_inference(model_cfg: Dict[str, Any]):
