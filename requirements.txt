@@ -8,3 +8,4 @@ PyYAML>=6.0
 torch>=2.2.0
 transformers>=4.51.0
 wandb>=0.17.0
+vllm

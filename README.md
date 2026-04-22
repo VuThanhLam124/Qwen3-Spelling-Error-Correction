@@ -75,6 +75,8 @@ Khi resume, cấu hình LoRA thực tế sẽ được đọc từ checkpoint đ
 
 ```bash
 python -m src.infer --config config/infer.yaml --text "thadnh phố cần thơ"
+python -m src.infer   --config config/infer.yaml   --adapter-path model/check_point_1800   --text "nèn kinh te thé giới đang đứng trươc nguy co của mọt cuoc suy thoai" 
+
 ```
 
 ## Infer theo file

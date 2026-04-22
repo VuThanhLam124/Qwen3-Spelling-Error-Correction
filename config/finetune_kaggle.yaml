@@ -1,5 +1,5 @@
 model:
-  base_model: Qwen/Qwen3-0.6B
+  base_model: Qwen/Qwen3-4B
   trust_remote_code: true
   load_in_4bit: true
   bnb_4bit_quant_type: nf4
@@ -53,8 +53,8 @@ train:
   seed: 42
 
 lora:
-  r: 16
-  alpha: 32
+  r: 8
+  alpha: 16
   dropout: 0.05
   target_modules:
     - q_proj
@@ -69,4 +69,4 @@ wandb:
   enabled: true
   project: qwen3-spelling-error-correction
   entity: null
-  run_name: qwen3-0.6b-coung21-stage1
+  run_name: qwen3-4b-coung21-stage1
