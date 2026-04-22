@@ -20,7 +20,7 @@ data:
       domain: generic
       source_type: synthetic
 
-  max_train_samples: 50000
+  max_train_samples: 500000
   max_eval_samples: 10000
   seed: 42
 
