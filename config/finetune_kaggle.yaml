@@ -33,8 +33,8 @@ prompt:
     Không giải thích.
 
 train:
-  output_dir: outputs/qwen3-0.6b-spell-lora
-  resume_from_checkpoint: /kaggle/working/Qwen3-Spelling-Error-Correction/model/check_point_1800/
+  output_dir: outputs/qwen3-4b-spell-lora
+  resume_from_checkpoint: 
   per_device_train_batch_size: 16
   per_device_eval_batch_size: 16
   gradient_accumulation_steps: 32
