@@ -156,17 +156,18 @@ def main(config_path: str) -> None:
     eval_ds = build_hf_dataset(eval_rows) if eval_rows else None
 
     system_prompt = cfg["prompt"]["system_prompt"]
+    enable_thinking = cfg["prompt"].get("enable_thinking", False)
     max_length = cfg["train"].get("max_length", 192)
 
     train_ds = train_ds.map(
-        lambda x: tokenize_sft_example(x, tokenizer, system_prompt, max_length),
+        lambda x: tokenize_sft_example(x, tokenizer, system_prompt, max_length, enable_thinking=enable_thinking),
         remove_columns=train_ds.column_names,
         desc="Tokenize train",
     )
 
     if eval_ds is not None:
         eval_ds = eval_ds.map(
-            lambda x: tokenize_sft_example(x, tokenizer, system_prompt, max_length),
+            lambda x: tokenize_sft_example(x, tokenizer, system_prompt, max_length, enable_thinking=enable_thinking),
             remove_columns=eval_ds.column_names,
             desc="Tokenize eval",
         )

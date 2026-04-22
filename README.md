@@ -59,6 +59,8 @@ Sau đó chỉnh `wandb.enabled: true` trong `config/finetune.yaml` hoặc `conf
 python -m src.finetune --config config/finetune.yaml
 ```
 
+Mặc định repo đang tắt thinking của Qwen3 bằng `prompt.enable_thinking: false` cho cả train, infer và eval.
+
 Muốn resume từ một checkpoint cụ thể, đặt trong YAML:
 
 ```yaml

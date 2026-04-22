@@ -145,6 +145,7 @@ def main(config_path: str) -> None:
             row["input_text"],
             cfg["prompt"]["system_prompt"],
             cfg["generation"],
+            enable_thinking=cfg["prompt"].get("enable_thinking", False),
         )
         outputs.append({**row, "prediction": prediction})
 

@@ -49,7 +49,14 @@ def run_single_text(cfg: Dict[str, Any], text: str) -> None:
     """
     tokenizer = load_tokenizer(cfg["model"]["base_model"], cfg["model"].get("trust_remote_code", True))
     model = load_model_for_inference(cfg["model"])
-    pred = predict_text(model, tokenizer, text, cfg["prompt"]["system_prompt"], cfg["generation"])
+    pred = predict_text(
+        model,
+        tokenizer,
+        text,
+        cfg["prompt"]["system_prompt"],
+        cfg["generation"],
+        enable_thinking=cfg["prompt"].get("enable_thinking", False),
+    )
     print(pred)
 
 
@@ -71,6 +78,7 @@ def run_file(cfg: Dict[str, Any], input_file: str, output_file: str) -> None:
             row["input_text"],
             cfg["prompt"]["system_prompt"],
             cfg["generation"],
+            enable_thinking=cfg["prompt"].get("enable_thinking", False),
         )
         outputs.append({**row, "prediction": prediction})
 

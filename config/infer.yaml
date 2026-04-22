@@ -9,6 +9,7 @@ model:
   device_map: auto
 
 prompt:
+  enable_thinking: false
   system_prompt: |
     Bạn là bộ sửa lỗi chính tả tiếng Việt.
     Chỉ trả về câu đã sửa.

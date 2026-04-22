@@ -24,18 +24,31 @@ def build_messages(system_prompt: str, input_text: str, target_text: Optional[st
     return messages
 
 
-def _render_prompt(tokenizer, messages: List[Dict[str, str]], add_generation_prompt: bool) -> str:
+def _render_prompt(
+    tokenizer,
+    messages: List[Dict[str, str]],
+    add_generation_prompt: bool,
+    enable_thinking: bool = False,
+) -> str:
     """
     - arg/input: tokenizer, list messages, cờ generation prompt.
     - output: prompt string.
     - mục đích của hàm: render chat template của model nếu có.
     """
     if hasattr(tokenizer, "apply_chat_template"):
-        return tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=add_generation_prompt,
-        )
+        try:
+            return tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=add_generation_prompt,
+                enable_thinking=enable_thinking,
+            )
+        except TypeError:
+            return tokenizer.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=add_generation_prompt,
+            )
 
     prompt = ""
     for msg in messages:
@@ -45,7 +58,13 @@ def _render_prompt(tokenizer, messages: List[Dict[str, str]], add_generation_pro
     return prompt
 
 
-def tokenize_sft_example(example: Dict[str, Any], tokenizer, system_prompt: str, max_length: int) -> Dict[str, Any]:
+def tokenize_sft_example(
+    example: Dict[str, Any],
+    tokenizer,
+    system_prompt: str,
+    max_length: int,
+    enable_thinking: bool = False,
+) -> Dict[str, Any]:
     """
     - arg/input: một record, tokenizer, system prompt và max length.
     - output: record đã token hóa với labels masked.
@@ -54,8 +73,18 @@ def tokenize_sft_example(example: Dict[str, Any], tokenizer, system_prompt: str,
     prompt_messages = build_messages(system_prompt, example["input_text"])
     full_messages = build_messages(system_prompt, example["input_text"], example["target_text"])
 
-    prompt_text = _render_prompt(tokenizer, prompt_messages, add_generation_prompt=True)
-    full_text = _render_prompt(tokenizer, full_messages, add_generation_prompt=False)
+    prompt_text = _render_prompt(
+        tokenizer,
+        prompt_messages,
+        add_generation_prompt=True,
+        enable_thinking=enable_thinking,
+    )
+    full_text = _render_prompt(
+        tokenizer,
+        full_messages,
+        add_generation_prompt=False,
+        enable_thinking=enable_thinking,
+    )
 
     prompt_ids = tokenizer(prompt_text, add_special_tokens=False)["input_ids"]
     full_ids = tokenizer(full_text, add_special_tokens=False)["input_ids"]
@@ -90,14 +119,26 @@ def _get_model_device(model) -> torch.device:
 
 
 @torch.no_grad()
-def predict_text(model, tokenizer, input_text: str, system_prompt: str, generation_cfg: Dict[str, Any]) -> str:
+def predict_text(
+    model,
+    tokenizer,
+    input_text: str,
+    system_prompt: str,
+    generation_cfg: Dict[str, Any],
+    enable_thinking: bool = False,
+) -> str:
     """
     - arg/input: model, tokenizer, input text, system prompt và config generate.
     - output: chuỗi dự đoán đã decode.
     - mục đích của hàm: suy luận một câu sửa lỗi.
     """
     messages = build_messages(system_prompt, input_text)
-    prompt_text = _render_prompt(tokenizer, messages, add_generation_prompt=True)
+    prompt_text = _render_prompt(
+        tokenizer,
+        messages,
+        add_generation_prompt=True,
+        enable_thinking=enable_thinking,
+    )
     inputs = tokenizer(prompt_text, return_tensors="pt")
     device = _get_model_device(model)
     inputs = {k: v.to(device) for k, v in inputs.items()}

@@ -25,6 +25,7 @@ data:
   seed: 42
 
 prompt:
+  enable_thinking: true
   system_prompt: |
     Bạn là bộ sửa lỗi chính tả tiếng Việt.
     Chỉ trả về câu đã sửa.
