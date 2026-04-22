@@ -20,7 +20,7 @@ data:
       domain: generic
       source_type: synthetic
 
-  max_train_samples: 80000
+  max_train_samples: 50000
   max_eval_samples: 10000
   seed: 42
 
@@ -44,8 +44,8 @@ train:
   warmup_steps: 50
   weight_decay: 0.01
   logging_steps: 10
-  eval_steps: 100
-  save_steps: 100
+  eval_steps: 50
+  save_steps: 50
   save_total_limit: 2
   lr_scheduler_type: cosine
   gradient_checkpointing: false
